@@ -60,6 +60,7 @@ public class UpdateService extends Service {
     public ArrayList<String> mUpdateFiles;
     public ArrayList<String> mUpdateFilesName;
     public ArrayList<Long> mUpdateFilesSize;
+    public ArrayList<String> mUpdateFileUrls;
 
     public int mGpuType = 0;
 
@@ -137,13 +138,14 @@ public class UpdateService extends Service {
     void startUpdating()
     {
         setUpdateStatus(UpdateActivity.UpdateStatus.CheckUpdate);
-        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest("https://samp-mobile.shop/client_config.json", new Response.Listener<String>() {
+        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest("https://raw.githubusercontent.com/sahisahil9393-rgb/my-skins/main/client_config.json", new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 try {
                     mUpdateFiles = new ArrayList<>();
                     mUpdateFilesName = new ArrayList<>();
                     mUpdateFilesSize = new ArrayList<>();
+                    mUpdateFileUrls = new ArrayList<>();
 
                     JSONObject jSONObject = new JSONObject(response).getJSONObject("client_config");
                     mUpdateVersion = jSONObject.getInt("version_code");
@@ -272,6 +274,7 @@ public class UpdateService extends Service {
                                 mUpdateFilesName.add(fileData.getName());
                                 Log.d("x1y2z", "File path: " + fileData.getPath());
                                 mUpdateFilesSize.add(fileData.getSize());
+                    mUpdateFileUrls.add(fileData.getUrl());
                                 mUpdateGameDataSize=mUpdateGameDataSize+fileData.getSize();
                                 Log.d("x1y2z", "File size: " + fileData.getSize());
                             }
@@ -353,9 +356,11 @@ public class UpdateService extends Service {
         ArrayList arrayList = new ArrayList(mUpdateFiles);
         ArrayList arrayList1 = new ArrayList(mUpdateFilesName);
         ArrayList arrayList2 = new ArrayList(mUpdateFilesSize);
+        ArrayList arrayList3 = new ArrayList(mUpdateFileUrls);
         mUpdateFiles.clear();
         mUpdateFilesName.clear();
         mUpdateFilesSize.clear();
+        mUpdateFileUrls.clear();
         Ref.IntRef intRef = new Ref.IntRef();
         intRef.element = 0;
         Ref.LongRef longRef1 = new Ref.LongRef();
@@ -379,7 +384,7 @@ public class UpdateService extends Service {
             Log.d("x1y2z", "startDataUpdating " + mUpdateGameDataSize + " " + mUpdateGameDataSizeUpdated);
 
             mDownloadingStatus = true;
-            PRDownloader.download("https://samp-mobile.shop/files/" + arrayList.get(intRef.element), string.replace(arrayList1.get(intRef.element).toString(), ""), String.valueOf(arrayList1.get(intRef.element))).build().setOnStartOrResumeListener(null).setOnPauseListener(null).setOnCancelListener(null).setOnProgressListener(new OnProgressListener() {
+            PRDownloader.download(String.valueOf(arrayList3.get(intRef.element)), string.replace(arrayList1.get(intRef.element).toString(), ""), String.valueOf(arrayList1.get(intRef.element))).build().setOnStartOrResumeListener(null).setOnPauseListener(null).setOnCancelListener(null).setOnProgressListener(new OnProgressListener() {
                 @Override
                 public void onProgress(Progress progress) {
                     mDownloadingStatus = true;
