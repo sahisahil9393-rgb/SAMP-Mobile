@@ -1,13 +1,13 @@
 package com.samp.mobile.launcher.fragments;
 
 import android.content.Intent;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
@@ -29,8 +29,7 @@ public class HomeFragment extends Fragment {
         yt_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("https://bit.ly/x1y2z_yt"));
-                startActivity(link);
+                openExternalLink(((MainActivity) requireActivity()).getYoutubeUrl());
             }
         });
 
@@ -39,8 +38,7 @@ public class HomeFragment extends Fragment {
         discord_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/jvKM7HR3Dc"));
-                startActivity(link);
+                openExternalLink(((MainActivity) requireActivity()).getDiscordUrl());
             }
         });
 
@@ -49,11 +47,19 @@ public class HomeFragment extends Fragment {
         internet_logo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent link = new Intent(Intent.ACTION_VIEW, Uri.parse("https://samp-mobile.shop"));
-                startActivity(link);
+                openExternalLink(((MainActivity) requireActivity()).getWebsiteUrl());
             }
         });
 
         return view;
+    }
+
+    private void openExternalLink(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            Toast.makeText(requireContext(), "Link is not configured yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
     }
 }
