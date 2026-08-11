@@ -66,6 +66,13 @@ import java.util.concurrent.TimeUnit;
 @Obfuscate
 public class MainActivity extends AppCompatActivity {
 
+    private static final String SERVER_LIST_URL =
+            "https://raw.githubusercontent.com/sahisahil9393-rgb/my-skins/main/distribution.json";
+
+    private String youtubeUrl = "";
+    private String discordUrl = "";
+    private String websiteUrl = "";
+
     public String[] tabTitles = { "Servers", "Info", "Settings" };
     public int[] tabImages = { R.drawable.ic_mainmenu, R.drawable.ic_server, R.drawable.ic_settingsmenu};
     public int[] tabSelectedImages = { R.drawable.ic_mainmenu_on, R.drawable.ic_serveron, R.drawable.ic_settingsmenu_on};
@@ -158,33 +165,82 @@ public class MainActivity extends AppCompatActivity {
         return mFavoriteServersList;
     }
 
+    public final String getYoutubeUrl() {
+        return youtubeUrl;
+    }
+
+    public final String getDiscordUrl() {
+        return discordUrl;
+    }
+
+    public final String getWebsiteUrl() {
+        return websiteUrl;
+    }
+
 
     public boolean getServersInfo()
     {
         final boolean[] z = {false};
-        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest("https://samp-mobile.shop/hosted.json", new Response.Listener<String>() {
+        String serverListUrl = SERVER_LIST_URL + "?v=" + System.currentTimeMillis();
+        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest(serverListUrl, new Response.Listener<String>() {
 
             @Override
             public void onResponse(String response) {
                 try {
+                    getServerList().clear();
                     JSONObject jsonObject  = new JSONObject(new String(response.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
-                    JSONArray jsonArray = jsonObject.getJSONArray("query");
+                    JSONObject social = jsonObject.optJSONObject("social");
+                    if (social != null) {
+                        youtubeUrl = social.optString("youtube", "").trim();
+                        discordUrl = social.optString("discord", "").trim();
+                        websiteUrl = social.optString("website", "").trim();
+                    }
+
+                    JSONArray jsonArray = jsonObject.getJSONArray("servers");
                     for(int i = 0; i<jsonArray.length(); i++) {
                         JSONObject jSONObject = jsonArray.getJSONObject(i);
-                        SAMPServerInfo sAMPServerInfo = new SAMPServerInfo();
-                        sAMPServerInfo.setId(jSONObject.getInt("number"));
-                        sAMPServerInfo.setServerName(jSONObject.getString("name"));
-                        sAMPServerInfo.setAddress(jSONObject.getString("ip"));
-                        sAMPServerInfo.setPort(jSONObject.getInt("port"));
-                        sAMPServerInfo.setCurrentPlayerCount(jSONObject.getInt("online"));
-                        sAMPServerInfo.setMaxPlayerCount(jSONObject.getInt("maxplayers"));
-                        sAMPServerInfo.setHasPassword(jSONObject.getBoolean("password"));
+                        if (!jSONObject.optBoolean("show", true)) {
+                            continue;
+                        }
+
+                        String configuredAddress = jSONObject.optString("address", "").trim();
+                        String ip = jSONObject.optString("ip", "").trim();
+                        int port = jSONObject.optInt("port", 0);
+
+                        if (ip.isEmpty()) {
+                            int separator = configuredAddress.lastIndexOf(':');
+                            if (separator > 0 && separator < configuredAddress.length() - 1) {
+                                ip = configuredAddress.substring(0, separator).trim();
+                                if (port == 0) {
+                                    port = Integer.parseInt(configuredAddress.substring(separator + 1).trim());
+                                }
+                            } else {
+                                ip = configuredAddress;
+                            }
+                        }
+
+                        if (ip.isEmpty() || port <= 0 || port > 65535) {
+                            Log.w("Servers", "Skipping invalid server entry: " + configuredAddress);
+                            continue;
+                        }
+
+                        String name = jSONObject.optString("name", ip);
+                        int online = jSONObject.optInt("online", 0);
+                        int maxPlayers = jSONObject.optInt("maxplayers", 0);
+                        int password = jSONObject.optBoolean("password", false) ? 1 : 0;
+                        String mode = jSONObject.optString("mode", "Android");
+                        String language = jSONObject.optString("language", "English");
+
+                        SAMPServerInfo sAMPServerInfo = new SAMPServerInfo(
+                                1, i, name, ip, port, online, maxPlayers,
+                                password, 1, 0, language);
+                        sAMPServerInfo.setServerMode(mode);
                         sAMPServerInfo.setServerStatus(SAMPServerInfo.Status.ONLINE);
-                        sAMPServerInfo.setPing(12);
                         getServerList().add(sAMPServerInfo);
                     }
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
+                } catch (JSONException | NumberFormatException e) {
+                    Log.e("Servers", "Unable to read server list from " + SERVER_LIST_URL, e);
+                    return;
                 }
 
                 for (Fragment fragment : getSupportFragmentManager().getFragments()) {
