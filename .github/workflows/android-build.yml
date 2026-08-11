@@ -1,0 +1,64 @@
+name: Build Android app
+
+on:
+  push:
+    branches:
+      - GTA-2.10
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build H.Sahil RP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: |
+          sdkmanager "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "cmake;3.22.1" \
+            "ndk;26.2.11394342"
+
+      - name: Prepare temporary CI signing key
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/../keys"
+          keytool -genkeypair \
+            -alias key0 \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -keystore "$GITHUB_WORKSPACE/../keys/new.jks" \
+            -storepass 123123 \
+            -keypass 123123 \
+            -dname "CN=H.Sahil RP, OU=Mobile, O=H.Sahil RP, L=Unknown, S=Unknown, C=US"
+
+      - name: Build APK and AAB
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean assembleRelease bundleRelease --no-daemon --stacktrace
+
+      - name: Upload APK and AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: H-Sahil-RP-android-build
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
