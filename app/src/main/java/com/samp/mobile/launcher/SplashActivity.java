@@ -77,34 +77,34 @@ public class SplashActivity extends AppCompatActivity {
 
         if(!SignatureChecker.isSignatureValid(this, getPackageName()))
         {
-            ((TextView)findViewById(R.id.launcher_orig_text)).setText("Using not original launcher");
+            ((TextView)findViewById(R.id.launcher_orig_text)).setText("Using custom launcher");
         }
-        else {
-            Config.currentContext = this;
 
-            prefs = getSharedPreferences("com.samp.mobile", MODE_PRIVATE);
+        Config.currentContext = this;
 
-            builder = new AlertDialog.Builder(this);
+        prefs = getSharedPreferences("com.samp.mobile", MODE_PRIVATE);
 
-            if (!Util.isNetworkConnected(Config.currentContext)) {
-                builder.setMessage("There is no internet connection.\n" +
-                                "Please exit, connect to the internet and reenter the launcher")
-                        .setCancelable(false)
-                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false);
+        builder = new AlertDialog.Builder(this);
 
-                                finishAndRemoveTask();
-                                System.exit(0);
-                                dialog.dismiss();
-                            }
-                        })
-                        .setNegativeButton("", null);
-                AlertDialog alert = builder.create();
-                alert.setTitle("Info");
-                alert.show();
-                return;
-            }
+        if (!Util.isNetworkConnected(Config.currentContext)) {
+            builder.setMessage("There is no internet connection.\n" +
+                            "Please exit, connect to the internet and reenter the launcher")
+                    .setCancelable(false)
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false);
+
+                            finishAndRemoveTask();
+                            System.exit(0);
+                            dialog.dismiss();
+                        }
+                    })
+                    .setNegativeButton("", null);
+            AlertDialog alert = builder.create();
+            alert.setTitle("Info");
+            alert.show();
+            return;
+        }
 
             mInHandler = new IncomingHandler();
             mMessenger = new Messenger(mInHandler);
