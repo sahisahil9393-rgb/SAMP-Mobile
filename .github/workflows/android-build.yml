@@ -36,6 +36,54 @@ jobs:
             "cmake;3.22.1" \
             "ndk;26.2.11394342"
 
+      - name: Validate remote update manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          import urllib.request
+          from urllib.parse import urlparse
+
+          config_url = "https://raw.githubusercontent.com/sahisahil9393-rgb/my-skins/main/client_config.json"
+
+          def read_json(url):
+              request = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "SAMP-Mobile-update-manifest-check"},
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  if response.status != 200:
+                      raise RuntimeError(f"{url} returned HTTP {response.status}")
+                  return json.load(response)
+
+          root = read_json(config_url)
+          config = root.get("client_config", root)
+          required_config = ("version_code", "url_cache_files")
+          missing_config = [key for key in required_config if key not in config]
+          if missing_config:
+              raise RuntimeError(f"Missing config keys: {missing_config}")
+
+          cache_url = config["url_cache_files"]
+          if not isinstance(cache_url, str) or urlparse(cache_url).scheme != "https":
+              raise RuntimeError("url_cache_files must be an HTTPS URL")
+
+          manifest = read_json(cache_url)
+          files = manifest.get("files")
+          if not isinstance(files, list) or not files:
+              raise RuntimeError("The file manifest must contain a non-empty files array")
+
+          for index, entry in enumerate(files):
+              for key in ("name", "path", "url", "size"):
+                  if key not in entry:
+                      raise RuntimeError(f"File entry {index} is missing {key}")
+              parsed_url = urlparse(entry["url"])
+              if parsed_url.scheme != "https" or not parsed_url.netloc:
+                  raise RuntimeError(f"File entry {index} has an invalid HTTPS URL")
+              if not entry["name"] or not entry["path"] or not isinstance(entry["size"], int) or entry["size"] <= 0:
+                  raise RuntimeError(f"File entry {index} has invalid metadata")
+
+          print(f"Validated update config and {len(files)} downloadable file entries.")
+          PY
+
       - name: Prepare temporary CI signing key
         run: |
           mkdir -p "$GITHUB_WORKSPACE/../keys"
