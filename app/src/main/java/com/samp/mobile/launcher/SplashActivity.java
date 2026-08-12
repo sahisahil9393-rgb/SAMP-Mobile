@@ -152,7 +152,6 @@ public class SplashActivity extends AppCompatActivity {
             GLSurfaceView mGlSurfaceView = new GLSurfaceView(this);
             mGlSurfaceView.setRenderer(mGlRenderer);
             gpuLayout.addView(mGlSurfaceView);
-        }
     }
 
     public class IncomingHandler extends Handler {
