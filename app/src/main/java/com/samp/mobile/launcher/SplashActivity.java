@@ -222,6 +222,9 @@ public class SplashActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 }
+                else if (valueOf2 == UpdateActivity.GameStatus.Unknown) {
+                    showUpdateError();
+                }
                 else {
                     startActivity(new Intent(SplashActivity.this, MainActivity.class));
                     finish();
@@ -229,6 +232,29 @@ public class SplashActivity extends AppCompatActivity {
 
             }
         }
+    }
+
+    private void showUpdateError() {
+        if (isFinishing()) {
+            return;
+        }
+
+        builder.setTitle("Update error")
+                .setMessage("Could not load the game files. Check your internet connection and try again.")
+                .setCancelable(false)
+                .setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        recreate();
+                    }
+                })
+                .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finishAndRemoveTask();
+                    }
+                });
+        builder.create().show();
     }
 
     public void checkUpdate() {

@@ -13,6 +13,8 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
@@ -25,20 +27,12 @@ import com.downloader.PRDownloaderConfig;
 import com.downloader.Progress;
 import com.joom.paranoid.Obfuscate;
 import com.samp.mobile.launcher.data.FilesData;
-import com.samp.mobile.launcher.util.Util;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 @Obfuscate
 public class UpdateService extends Service {
@@ -63,6 +57,10 @@ public class UpdateService extends Service {
     public ArrayList<String> mUpdateFileUrls;
 
     public int mGpuType = 0;
+
+    private static final String CLIENT_CONFIG_URL =
+            "https://raw.githubusercontent.com/sahisahil9393-rgb/my-skins/main/client_config.json";
+    private static final int UPDATE_REQUEST_TIMEOUT_MS = 30000;
 
     @Override
     public void onCreate() {
@@ -107,19 +105,23 @@ public class UpdateService extends Service {
                 UpdateService updateService = UpdateService.this;
                 obtain.replyTo = updateService.mMessenger;
                 messenger = updateService.mActivityMessenger;
-                try {
-                    messenger.send(obtain);
-                } catch (RemoteException e5) {
-                    e5.printStackTrace();
+                if (messenger != null) {
+                    try {
+                        messenger.send(obtain);
+                    } catch (RemoteException e5) {
+                        Log.e("UpdateService", "Unable to send update status", e5);
+                    }
                 }
             } else if (msg.what == 5) {
                 obtain = Message.obtain(mInHandler, 5);
                 obtain.getData().putString("status", mGameStatus.name());
                 obtain.replyTo = mMessenger;
-                try {
-                    mActivityMessenger.send(obtain);
-                } catch (RemoteException e5) {
-                    e5.printStackTrace();
+                if (mActivityMessenger != null) {
+                    try {
+                        mActivityMessenger.send(obtain);
+                    } catch (RemoteException e5) {
+                        Log.e("UpdateService", "Unable to send game status", e5);
+                    }
                 }
 
             } else if (msg.what == 7) {
@@ -138,127 +140,102 @@ public class UpdateService extends Service {
     void startUpdating()
     {
         setUpdateStatus(UpdateActivity.UpdateStatus.CheckUpdate);
-        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest("https://raw.githubusercontent.com/sahisahil9393-rgb/my-skins/main/client_config.json", new Response.Listener<String>() {
+        mUpdateFiles = new ArrayList<>();
+        mUpdateFilesName = new ArrayList<>();
+        mUpdateFilesSize = new ArrayList<>();
+        mUpdateFileUrls = new ArrayList<>();
+        mUpdateGameDataSize = 0;
+        mUpdateGameDataSizeUpdated = 0;
+
+        StringRequest request = new StringRequest(Request.Method.GET, CLIENT_CONFIG_URL, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 try {
-                    mUpdateFiles = new ArrayList<>();
-                    mUpdateFilesName = new ArrayList<>();
-                    mUpdateFilesSize = new ArrayList<>();
-                    mUpdateFileUrls = new ArrayList<>();
-
-                    JSONObject jSONObject = new JSONObject(response).getJSONObject("client_config");
+                    JSONObject root = new JSONObject(response);
+                    /*
+                     * Older configurations wrapped these values in client_config.
+                     * The current my-skins/client_config.json stores them at the root.
+                     * Supporting both formats prevents the launcher from getting stuck
+                     * when the configuration repository changes shape.
+                     */
+                    JSONObject jSONObject = root.optJSONObject("client_config");
+                    if (jSONObject == null) {
+                        jSONObject = root;
+                    }
                     mUpdateVersion = jSONObject.getInt("version_code");
-                    mUpdateGameURL = jSONObject.getString("url_launcher");
+                    mUpdateGameURL = jSONObject.optString("url_launcher", "");
 
-                    String string = jSONObject.getString("url_cache_files");
-
-                    getFilesInfo(string);
-
-                    if (!isGameUpdateExists()) {
-                        if (mUpdateFiles.isEmpty()) {
-                            mGameStatus = UpdateActivity.GameStatus.Updated;
-                        }
-                        else {
-                            mGameStatus = UpdateActivity.GameStatus.UpdateRequired;
-                        }
-                    }
-                    else {
-                        mGameStatus = UpdateActivity.GameStatus.GameUpdateRequired;
-                    }
-
-                    setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
+                    String filesUrl = jSONObject.getString("url_cache_files");
+                    getFilesInfo(filesUrl);
 
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    failUpdate("Invalid update configuration", e);
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.d("x1y2z", "error " + error.toString());
-                mGameStatus = UpdateActivity.GameStatus.Unknown;
-                Message obtain = Message.obtain(mInHandler, 5);
-                obtain.getData().putString("status", mGameStatus.name());
-                obtain.replyTo = mMessenger;
-                Messenger messenger = mActivityMessenger;
-                if (messenger != null) {
-                    try {
-                        messenger.send(obtain);
-                    } catch (RemoteException e5) {
-                        e5.printStackTrace();
-                    }
-                }
-
+                failUpdate("Unable to load update configuration", error);
             }
-        }));
+        });
+        request.setRetryPolicy(new DefaultRetryPolicy(
+                UPDATE_REQUEST_TIMEOUT_MS,
+                1,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        Volley.newRequestQueue(getApplicationContext()).add(request);
     }
 
-    public void getFilesInfo(String response) throws JSONException {
-        new Thread(new Runnable() {
+    private void getFilesInfo(String filesUrl) {
+        StringRequest request = new StringRequest(Request.Method.GET, filesUrl, new Response.Listener<String>() {
             @Override
-            public void run() {
-                HttpURLConnection connection = null;
-                BufferedReader reader = null;
-
+            public void onResponse(String response) {
                 try {
-                    URL url = new URL(response);
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.connect();
-
-
-                    InputStream stream = connection.getInputStream();
-
-                    reader = new BufferedReader(new InputStreamReader(stream));
-
-                    StringBuffer buffer = new StringBuffer();
-                    String line = "";
-
-                    while ((line = reader.readLine()) != null) {
-                        buffer.append(line+"\n");
-
-                    }
-
-                    Util.responseFiles = buffer.toString();
-                    Util.responseFilesInt = 1;
-
-
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                    Util.responseFilesInt = 2;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Util.responseFilesInt = 2;
+                    parseFilesInfo(response);
+                    completeUpdateCheck();
+                } catch (JSONException e) {
+                    failUpdate("Invalid update file list", e);
                 }
             }
-        }).start();
-        int i5;
-        while (true) {
-            i5 = Util.responseFilesInt;
-            if (i5 != 0) {
-                break;
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                failUpdate("Unable to load update file list", error);
             }
-            try {
-                Thread.sleep(30);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        });
+        request.setRetryPolicy(new DefaultRetryPolicy(
+                UPDATE_REQUEST_TIMEOUT_MS,
+                1,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        Volley.newRequestQueue(getApplicationContext()).add(request);
+    }
 
-        if(i5 == 2) return;
-
-        Log.d("x1y2z", "Info: " + Util.responseFiles);
-        JSONObject jsonObject = new JSONObject(Util.responseFiles);
+    private void parseFilesInfo(String response) throws JSONException {
+        JSONObject jsonObject = new JSONObject(response);
         JSONArray jsonArray = jsonObject.getJSONArray("files");
         Log.d("x1y2z", "Length: " + jsonArray.length());
+        File externalFilesDir = getExternalFilesDir(null);
+        if (externalFilesDir == null) {
+            throw new JSONException("External files directory is unavailable");
+        }
+
         for(int i = 0; i<jsonArray.length(); i++) {
-            FilesData fileData = new FilesData(jsonArray.getJSONObject(i).getString("name"), jsonArray.getJSONObject(i).getLong("size"), jsonArray.getJSONObject(i).getString("path"), jsonArray.getJSONObject(i).getString("url"));
+            JSONObject fileObject = jsonArray.getJSONObject(i);
+            String name = fileObject.optString("name", "");
+            long size = fileObject.optLong("size", -1);
+            String path = fileObject.optString("path", "");
+            String url = fileObject.optString("url", "");
+            if (name.length() == 0 || path.length() == 0 || url.length() == 0 || size < 0) {
+                throw new JSONException("Invalid file entry at index " + i);
+            }
+
+            FilesData fileData = new FilesData(name, size, path, url);
             if (!fileData.getName().equals("samp_log.txt") && !fileData.getName().equals("svlog.txt") && !fileData.getName().equals("gtasatelem.set")) {
                 if (!fileData.getName().equals("GTASAMP10.b") && !fileData.getName().equals(".htaccess")) {
                     if (!fileData.getName().equals("gta_sa.set")) {
                         if (!fileData.getName().equals("settings.ini")) {
-                            String str = getExternalFilesDir(null) + "/";
-                            File file = new File(str + fileData.getPath());
+                            File file = new File(externalFilesDir, fileData.getPath());
                             if (!file.exists() || file.length() != fileData.getSize()) {
                                 if(!fileData.getPath().contains("player") && !fileData.getPath().contains("playerhi") && !fileData.getPath().contains("menu") && !fileData.getPath().contains("samp")) {
                                     if ((fileData.getPath().contains(".dxt.") && mGpuType != 1))
@@ -274,7 +251,7 @@ public class UpdateService extends Service {
                                 mUpdateFilesName.add(fileData.getName());
                                 Log.d("x1y2z", "File path: " + fileData.getPath());
                                 mUpdateFilesSize.add(fileData.getSize());
-                    mUpdateFileUrls.add(fileData.getUrl());
+                                mUpdateFileUrls.add(fileData.getUrl());
                                 mUpdateGameDataSize=mUpdateGameDataSize+fileData.getSize();
                                 Log.d("x1y2z", "File size: " + fileData.getSize());
                             }
@@ -284,6 +261,30 @@ public class UpdateService extends Service {
                 }
             }
         }
+    }
+
+    private void completeUpdateCheck() {
+        boolean gameUpdateExists = isGameUpdateExists();
+        if (!gameUpdateExists) {
+            if (mUpdateFiles.isEmpty()) {
+                mGameStatus = UpdateActivity.GameStatus.Updated;
+            } else {
+                mGameStatus = UpdateActivity.GameStatus.UpdateRequired;
+            }
+        } else {
+            if (mUpdateGameURL == null || mUpdateGameURL.trim().length() == 0) {
+                failUpdate("Update configuration has no APK download URL", null);
+                return;
+            }
+            mGameStatus = UpdateActivity.GameStatus.GameUpdateRequired;
+        }
+        setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
+    }
+
+    private void failUpdate(String message, Throwable error) {
+        Log.e("UpdateService", message, error);
+        mGameStatus = UpdateActivity.GameStatus.Unknown;
+        setUpdateStatus(UpdateActivity.UpdateStatus.Undefined);
     }
 
     public void updateGame() {
@@ -455,9 +456,20 @@ public class UpdateService extends Service {
     public void downloadGame()
     {
         Log.d("UpdateService", "downloadGame");
+        if (mUpdateGameURL == null || mUpdateGameURL.trim().length() == 0) {
+            failUpdate("Cannot download game update: APK URL is empty", null);
+            return;
+        }
+
+        File externalFilesDir = getExternalFilesDir(null);
+        if (externalFilesDir == null) {
+            failUpdate("Cannot download game update: external files directory is unavailable", null);
+            return;
+        }
+
         mDownloadingStatus = true;
 
-        File file = new File(getExternalFilesDir(null) + "/download/update.apk");
+        File file = new File(externalFilesDir, "download/update.apk");
         if (file.exists()) {
             file.delete();
         }
@@ -466,7 +478,7 @@ public class UpdateService extends Service {
         longRef.element = System.currentTimeMillis();
 
         mDownloadingStatus = true;
-        PRDownloader.download(mUpdateGameURL, getExternalFilesDir(null) + "/download", "update.apk").build().setOnStartOrResumeListener(null).setOnPauseListener(null).setOnCancelListener(null).setOnProgressListener(new OnProgressListener() {
+        PRDownloader.download(mUpdateGameURL, new File(externalFilesDir, "download").getAbsolutePath(), "update.apk").build().setOnStartOrResumeListener(null).setOnPauseListener(null).setOnCancelListener(null).setOnProgressListener(new OnProgressListener() {
             @Override
             public void onProgress(Progress progress) {
                 mDownloadingStatus = true;
@@ -512,8 +524,7 @@ public class UpdateService extends Service {
             @Override
             public void onError(Error error) {
                 mDownloadingStatus = false;
-                downloadGame();
-                Log.d("x1y2z", "error downloadgame");
+                failUpdate("Unable to download game update", error);
             }
         });
 
