@@ -181,7 +181,8 @@ public class MainActivity extends AppCompatActivity {
     public boolean getServersInfo()
     {
         final boolean[] z = {false};
-        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest(SERVER_LIST_URL, new Response.Listener<String>() {
+        String serverListUrl = SERVER_LIST_URL + "?v=" + System.currentTimeMillis();
+        Volley.newRequestQueue(getApplicationContext()).add(new StringRequest(serverListUrl, new Response.Listener<String>() {
 
             @Override
             public void onResponse(String response) {
