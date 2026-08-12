@@ -524,7 +524,7 @@ public class UpdateService extends Service {
             @Override
             public void onError(Error error) {
                 mDownloadingStatus = false;
-                failUpdate("Unable to download game update", error);
+                failUpdate("Unable to download game update: " + error, null);
             }
         });
 
