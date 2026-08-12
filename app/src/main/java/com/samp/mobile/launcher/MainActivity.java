@@ -69,6 +69,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String SERVER_LIST_URL =
             "https://raw.githubusercontent.com/sahisahil9393-rgb/my-skins/main/distribution.json";
 
+    private String youtubeUrl = "";
+    private String discordUrl = "";
+    private String websiteUrl = "";
+
     public String[] tabTitles = { "Servers", "Info", "Settings" };
     public int[] tabImages = { R.drawable.ic_mainmenu, R.drawable.ic_server, R.drawable.ic_settingsmenu};
     public int[] tabSelectedImages = { R.drawable.ic_mainmenu_on, R.drawable.ic_serveron, R.drawable.ic_settingsmenu_on};
@@ -161,6 +165,18 @@ public class MainActivity extends AppCompatActivity {
         return mFavoriteServersList;
     }
 
+    public final String getYoutubeUrl() {
+        return youtubeUrl;
+    }
+
+    public final String getDiscordUrl() {
+        return discordUrl;
+    }
+
+    public final String getWebsiteUrl() {
+        return websiteUrl;
+    }
+
 
     public boolean getServersInfo()
     {
@@ -172,6 +188,13 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     getServerList().clear();
                     JSONObject jsonObject  = new JSONObject(new String(response.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
+                    JSONObject social = jsonObject.optJSONObject("social");
+                    if (social != null) {
+                        youtubeUrl = social.optString("youtube", "").trim();
+                        discordUrl = social.optString("discord", "").trim();
+                        websiteUrl = social.optString("website", "").trim();
+                    }
+
                     JSONArray jsonArray = jsonObject.getJSONArray("servers");
                     for(int i = 0; i<jsonArray.length(); i++) {
                         JSONObject jSONObject = jsonArray.getJSONObject(i);
