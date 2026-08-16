@@ -37,7 +37,7 @@ public class FavoritesInfo {
                 int i2 = jSONObject.getInt("id");
                 int i3 = jSONObject.getInt("serverid");
                 String str = "";
-                int i4 = 7777;
+                int i4 = 19396;
                 if (!jSONObject.isNull("ip")) {
                     str = jSONObject.getString("ip");
                 }

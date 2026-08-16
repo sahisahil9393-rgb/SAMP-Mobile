@@ -34,7 +34,7 @@ CSettings::CSettings()
 	m_Settings.szPassword[length] = '\0';
     length = reader.Get("client", "version", "0.3.7").copy(m_Settings.szVersion, MAX_SETTINGS_STRING);
     m_Settings.szVersion[length] = '\0';
-	m_Settings.iPort = reader.GetInteger("client", "port", 7777);
+	m_Settings.iPort = reader.GetInteger("client", "port", 19396);
     m_Settings.bAutoAim = reader.GetBoolean("client", "autoaim", false);
 
 	// debug
