@@ -53,7 +53,7 @@ public class SettingsFragment extends Fragment {
     SeekBar mFPSSeekBar;
     TextView mFPSText;
 
-    String[] titles = {"0.3.7", "0.3.7-R1", "0.3.7-R3","0.3.7-R4","0.3.7-R5"};
+    String[] titles = {"0.3.7", "0.3.7-R1", "0.3.7-R3", "0.3.7-R4", "0.3.7-R5", "0.3.DL"};
 
     Spinner autoCompleteTextView;
     ArrayAdapter<String> adapter;
