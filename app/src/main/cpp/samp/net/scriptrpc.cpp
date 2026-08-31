@@ -1508,24 +1508,29 @@ void ScrTogglePlayerControllable(RPCParameters* rpcParams)
 	RakNet::BitStream bsData(Data, (iBitLength / 8) + 1, false);
 	bsData.Read(byteControllable);
 
-	// ====== FIX: Null safety checks ======
+	// ====== CRASH FIX: Comprehensive null and state checks ======
 	if (!pGame) {
-		FLog("ScrTogglePlayerControllable: pGame is null!");
+		FLog("[FIX] ScrTogglePlayerControllable: pGame is NULL!");
 		return;
 	}
 
 	CPlayerPed* pPlayerPed = pGame->FindPlayerPed();
 	if (!pPlayerPed) {
-		FLog("ScrTogglePlayerControllable: FindPlayerPed() returned null!");
+		FLog("[FIX] ScrTogglePlayerControllable: FindPlayerPed() returned NULL!");
 		return;
 	}
 
-	// Don't process TogglePlayerControllable before game is initialized
-	if (pNetGame && pNetGame->GetGameState() < GAMESTATE_AWAIT_JOIN) {
-		FLog("ScrTogglePlayerControllable: Game state not ready (%d), ignoring.", pNetGame->GetGameState());
-		return;
+	// CRITICAL: Only process TogglePlayerControllable after player has spawned.
+	// The server sends this RPC early (before Spawn), causing ScriptCommand
+	// to crash inside libGTASA.so because CTheScripts isn't fully ready.
+	if (pNetGame && pNetGame->GetPlayerPool() && pNetGame->GetPlayerPool()->GetLocalPlayer()) {
+		CLocalPlayer* pLocal = pNetGame->GetPlayerPool()->GetLocalPlayer();
+		if (!pLocal->m_bIsActive) {
+			FLog("[FIX] ScrTogglePlayerControllable: Player not active yet (before Spawn), ignoring. state=%d", byteControllable);
+			return;
+		}
 	}
-	// ====================================
+	// ==========================================================
 
 	pPlayerPed->TogglePlayerControllable(byteControllable);
 }
