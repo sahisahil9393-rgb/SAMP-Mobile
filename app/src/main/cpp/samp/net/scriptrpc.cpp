@@ -1508,7 +1508,26 @@ void ScrTogglePlayerControllable(RPCParameters* rpcParams)
 	RakNet::BitStream bsData(Data, (iBitLength / 8) + 1, false);
 	bsData.Read(byteControllable);
 
-	pGame->FindPlayerPed()->TogglePlayerControllable(byteControllable);
+	// ====== FIX: Null safety checks ======
+	if (!pGame) {
+		FLog("ScrTogglePlayerControllable: pGame is null!");
+		return;
+	}
+
+	CPlayerPed* pPlayerPed = pGame->FindPlayerPed();
+	if (!pPlayerPed) {
+		FLog("ScrTogglePlayerControllable: FindPlayerPed() returned null!");
+		return;
+	}
+
+	// Don't process TogglePlayerControllable before game is initialized
+	if (pNetGame && pNetGame->GetGameState() < GAMESTATE_AWAIT_JOIN) {
+		FLog("ScrTogglePlayerControllable: Game state not ready (%d), ignoring.", pNetGame->GetGameState());
+		return;
+	}
+	// ====================================
+
+	pPlayerPed->TogglePlayerControllable(byteControllable);
 }
 
 void ScrPlayerPlaySound(RPCParameters* rpcParams)
