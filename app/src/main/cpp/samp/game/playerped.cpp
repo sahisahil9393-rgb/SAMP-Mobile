@@ -255,6 +255,27 @@ void CPlayerPed::TogglePlayerControllable(bool bControllable)
         return;
     }
     FLog("TogglePlayerControllable4");
+
+    // ====== FIX: Rate limiting & safety checks ======
+    // Prevent spamming ScriptCommand multiple times with same state
+    static bool s_bLastControllableState = true;
+    static uint32_t s_dwLastToggleTick = 0;
+    uint32_t dwNow = GetTickCount();
+
+    if (s_bLastControllableState == bControllable && (dwNow - s_dwLastToggleTick) < 500) {
+        FLog("TogglePlayerControllable: Ignoring duplicate toggle within 500ms (state=%d)", bControllable);
+        return;
+    }
+    s_bLastControllableState = bControllable;
+    s_dwLastToggleTick = dwNow;
+
+    // Validate player number
+    if (m_bytePlayerNumber > 3) {
+        FLog("TogglePlayerControllable: Invalid player number %d", m_bytePlayerNumber);
+        return;
+    }
+    // ====================================
+
     //CHUD::bIsDisableControll = !bToggle;
     if(!bControllable)
     {
