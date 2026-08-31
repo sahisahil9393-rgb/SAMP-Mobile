@@ -256,25 +256,26 @@ void CPlayerPed::TogglePlayerControllable(bool bControllable)
     }
     FLog("TogglePlayerControllable4");
 
-    // ====== FIX: Rate limiting & safety checks ======
-    // Prevent spamming ScriptCommand multiple times with same state
-    static bool s_bLastControllableState = true;
-    static uint32_t s_dwLastToggleTick = 0;
+    // ====== CRASH FIX: Rate limiting + extra safety ======
+    // Prevent spamming ScriptCommand with same state rapidly.
+    // The server sends TogglePlayerControllable 5+ times in a row,
+    // crashing libGTASA.so because CTheScripts gets corrupted.
+    static bool s_bLastState = true;
+    static uint32_t s_dwLastTick = 0;
     uint32_t dwNow = GetTickCount();
-
-    if (s_bLastControllableState == bControllable && (dwNow - s_dwLastToggleTick) < 500) {
-        FLog("TogglePlayerControllable: Ignoring duplicate toggle within 500ms (state=%d)", bControllable);
+    if (s_bLastState == bControllable && (dwNow - s_dwLastTick) < 500) {
+        FLog("[FIX] TogglePlayerControllable: Duplicate ignored (same state=%d within 500ms)", bControllable);
         return;
     }
-    s_bLastControllableState = bControllable;
-    s_dwLastToggleTick = dwNow;
+    s_bLastState = bControllable;
+    s_dwLastTick = dwNow;
 
-    // Validate player number
+    // Extra safety: validate player number
     if (m_bytePlayerNumber > 3) {
-        FLog("TogglePlayerControllable: Invalid player number %d", m_bytePlayerNumber);
+        FLog("[FIX] TogglePlayerControllable: Invalid player number %d", m_bytePlayerNumber);
         return;
     }
-    // ====================================
+    // =====================================================
 
     //CHUD::bIsDisableControll = !bToggle;
     if(!bControllable)

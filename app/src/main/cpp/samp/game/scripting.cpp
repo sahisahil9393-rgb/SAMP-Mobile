@@ -20,6 +20,17 @@ int ScriptCommand(const SCRIPT_COMMAND *pScriptCommand, ...)
         return 0;
     }
 
+    // ====== CRASH FIX: Validate scripting engine is ready ======
+    if (!gst) {
+        FLog("[FIX] ScriptCommand: gst is NULL! InitScripting() not called yet.");
+        return 0;
+    }
+    if (!g_libGTASA) {
+        FLog("[FIX] ScriptCommand: g_libGTASA is NULL!");
+        return 0;
+    }
+    // =========================================================
+
     va_list ap;
     const char* p = pScriptCommand->Params;
     va_start(ap, pScriptCommand);
