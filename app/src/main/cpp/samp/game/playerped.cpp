@@ -277,6 +277,13 @@ void CPlayerPed::TogglePlayerControllable(bool bControllable)
     }
     // =====================================================
 
+    // ====== CRASH FIX: Set PlayerInFocus before ScriptCommand ======
+    // After reconnect, PlayerInFocus may hold invalid value from
+    // previous connection, causing SIGSEGV inside libGTASA.so
+    uint8_t oldPlayerInFocus = CWorld::PlayerInFocus;
+    CWorld::PlayerInFocus = m_bytePlayerNumber;
+    // ================================================================
+
     //CHUD::bIsDisableControll = !bToggle;
     if(!bControllable)
     {
@@ -290,6 +297,10 @@ void CPlayerPed::TogglePlayerControllable(bool bControllable)
         ScriptCommand(&toggle_player_controllable, m_bytePlayerNumber, 1);
         ScriptCommand(&lock_actor, m_dwGTAId, 0);
     }
+
+    // ====== CRASH FIX: Restore PlayerInFocus ======
+    CWorld::PlayerInFocus = oldPlayerInFocus;
+    // =============================================
 }
 // 0.3.7
 float CPlayerPed::GetHealth()
