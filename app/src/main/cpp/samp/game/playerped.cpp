@@ -1070,28 +1070,6 @@ int CPlayerPed::GetVehicleSeatID()
 }
 
 // 0.3.7
-void CPlayerPed::GetMatrix(RwMatrix *Matrix)
-{
-    if (!m_pPed|| !m_pPed->m_matrix) return;
-
-    Matrix->right.x = m_pPed->GetMatrix().m_right.x;
-    Matrix->right.y = m_pPed->GetMatrix().m_right.y;
-    Matrix->right.z = m_pPed->GetMatrix().m_right.z;
-
-    Matrix->up.x = m_pPed->GetMatrix().m_up.x;
-    Matrix->up.y = m_pPed->GetMatrix().m_up.y;
-    Matrix->up.z = m_pPed->GetMatrix().m_up.z;
-
-    Matrix->at.x = m_pPed->GetMatrix().m_forward.x;
-    Matrix->at.y = m_pPed->GetMatrix().m_forward.y;
-    Matrix->at.z = m_pPed->GetMatrix().m_forward.z;
-
-    Matrix->pos.x = m_pPed->GetMatrix().m_pos.x;
-    Matrix->pos.y = m_pPed->GetMatrix().m_pos.y;
-    Matrix->pos.z = m_pPed->GetMatrix().m_pos.z;
-}
-
-// 0.3.7
 void CPlayerPed::GetBoneMatrix(RwMatrix* matOut, int iBoneID)
 {
 	if (m_pPed && IsValidGamePed(m_pPed))
