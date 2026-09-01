@@ -1,4 +1,4 @@
-﻿#include "../main.h"
+#include "../main.h"
 #include "../game/game.h"
 #include "netgame.h"
 #include "localplayer.h"
@@ -428,6 +428,13 @@ bool CLocalPlayer::Process()
 
 void CLocalPlayer::ProcessClassSelection()
 { 
+FLog(
+    "PROCESS_CLASS spectating=%d dialog=%d selected=%d",
+    m_bIsSpectating,
+    m_bSpawnDialogShowed,
+    m_iSelectedClass
+);
+
 	if (!m_bSpawnDialogShowed)
 	{
 		if (pUI) pUI->spawn()->setVisible(true);
@@ -1571,6 +1578,14 @@ void CLocalPlayer::SetSpawnInfo(PLAYER_SPAWN_INFO* pSpawnInfo)
 // 0.3.7
 void CLocalPlayer::HandleClassSelectionOutcome(bool bOutcome)
 {
+FLog(
+    "CLASS_OUTCOME outcome=%d hasSpawnInfo=%d skin=%d hasPed=%d",
+    bOutcome,
+    m_bHasSpawnInfo,
+    m_SpawnInfo.iSkin,
+    m_pPlayerPed != nullptr
+);
+
 	if (bOutcome)
 	{
 		if (m_pPlayerPed)

@@ -122,6 +122,14 @@ void ScrSetSpawnInfo(RPCParameters *rpcParams)
 	RakNet::BitStream bsData(Data, (iBitLength / 8) + 1, false);
 	bsData.Read((char*)&spawnInfo, sizeof(PLAYER_SPAWN_INFO));
 
+	FLog(
+	    "SET_SPAWN_INFO skin=%d pos=%.2f,%.2f,%.2f",
+	    spawnInfo.iSkin,
+	    spawnInfo.vecPos.x,
+	    spawnInfo.vecPos.y,
+	    spawnInfo.vecPos.z
+	);
+
 	pNetGame->GetPlayerPool()->GetLocalPlayer()->SetSpawnInfo(&spawnInfo);
 
 	return;

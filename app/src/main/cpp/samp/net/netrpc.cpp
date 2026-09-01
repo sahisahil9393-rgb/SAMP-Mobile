@@ -346,6 +346,15 @@ void RequestClass(RPCParameters *rpcParams)
 	bsData.Read(byteRequestOutcome);
 	bsData.Read((char*)&SpawnInfo, sizeof(PLAYER_SPAWN_INFO));
 
+	FLog(
+	    "REQUEST_CLASS outcome=%u skin=%d pos=%.2f,%.2f,%.2f",
+	    byteRequestOutcome,
+	    SpawnInfo.iSkin,
+	    SpawnInfo.vecPos.x,
+	    SpawnInfo.vecPos.y,
+	    SpawnInfo.vecPos.z
+	);
+
 	Log::addParameter("byteRequestOutcome", byteRequestOutcome);
 	Log::addParameter("SpawnInfo.byteTeam", SpawnInfo.byteTeam);
 	Log::addParameter("SpawnInfo.fRotation", SpawnInfo.fRotation);
