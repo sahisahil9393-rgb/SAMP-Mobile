@@ -265,6 +265,7 @@ void CStreaming::InitImageList() {
     CStreaming::AddImageToList("TEXDB\\SAMP.IMG", true);
     CStreaming::AddImageToList("TEXDB\\SAMPCOL.IMG", true);
 #endif
+    CStreaming::AddImageToList("TEXDB\\PLAYER.IMG", true);
 }
 
 // Request a given model to be loaded.
