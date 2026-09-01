@@ -255,35 +255,6 @@ void CPlayerPed::TogglePlayerControllable(bool bControllable)
         return;
     }
     FLog("TogglePlayerControllable4");
-
-    // ====== CRASH FIX: Rate limiting + extra safety ======
-    // Prevent spamming ScriptCommand with same state rapidly.
-    // The server sends TogglePlayerControllable 5+ times in a row,
-    // crashing libGTASA.so because CTheScripts gets corrupted.
-    static bool s_bLastState = true;
-    static uint32_t s_dwLastTick = 0;
-    uint32_t dwNow = GetTickCount();
-    if (s_bLastState == bControllable && (dwNow - s_dwLastTick) < 500) {
-        FLog("[FIX] TogglePlayerControllable: Duplicate ignored (same state=%d within 500ms)", bControllable);
-        return;
-    }
-    s_bLastState = bControllable;
-    s_dwLastTick = dwNow;
-
-    // Extra safety: validate player number
-    if (m_bytePlayerNumber > 3) {
-        FLog("[FIX] TogglePlayerControllable: Invalid player number %d", m_bytePlayerNumber);
-        return;
-    }
-    // =====================================================
-
-    // ====== CRASH FIX: Set PlayerInFocus before ScriptCommand ======
-    // After reconnect, PlayerInFocus may hold invalid value from
-    // previous connection, causing SIGSEGV inside libGTASA.so
-    uint8_t oldPlayerInFocus = CWorld::PlayerInFocus;
-    CWorld::PlayerInFocus = m_bytePlayerNumber;
-    // ================================================================
-
     //CHUD::bIsDisableControll = !bToggle;
     if(!bControllable)
     {
@@ -297,10 +268,6 @@ void CPlayerPed::TogglePlayerControllable(bool bControllable)
         ScriptCommand(&toggle_player_controllable, m_bytePlayerNumber, 1);
         ScriptCommand(&lock_actor, m_dwGTAId, 0);
     }
-
-    // ====== CRASH FIX: Restore PlayerInFocus ======
-    CWorld::PlayerInFocus = oldPlayerInFocus;
-    // =============================================
 }
 // 0.3.7
 float CPlayerPed::GetHealth()
@@ -1100,6 +1067,28 @@ int CPlayerPed::GetVehicleSeatID()
     if(m_pPed->pVehicle->m_apPassengers[6] == m_pPed) return 7;
 
     return (-1);
+}
+
+// 0.3.7
+void CPlayerPed::GetMatrix(RwMatrix *Matrix)
+{
+    if (!m_pPed|| !m_pPed->m_matrix) return;
+
+    Matrix->right.x = m_pPed->GetMatrix().m_right.x;
+    Matrix->right.y = m_pPed->GetMatrix().m_right.y;
+    Matrix->right.z = m_pPed->GetMatrix().m_right.z;
+
+    Matrix->up.x = m_pPed->GetMatrix().m_up.x;
+    Matrix->up.y = m_pPed->GetMatrix().m_up.y;
+    Matrix->up.z = m_pPed->GetMatrix().m_up.z;
+
+    Matrix->at.x = m_pPed->GetMatrix().m_forward.x;
+    Matrix->at.y = m_pPed->GetMatrix().m_forward.y;
+    Matrix->at.z = m_pPed->GetMatrix().m_forward.z;
+
+    Matrix->pos.x = m_pPed->GetMatrix().m_pos.x;
+    Matrix->pos.y = m_pPed->GetMatrix().m_pos.y;
+    Matrix->pos.z = m_pPed->GetMatrix().m_pos.z;
 }
 
 // 0.3.7
