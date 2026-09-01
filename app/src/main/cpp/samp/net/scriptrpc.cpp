@@ -108,16 +108,6 @@ void ScrTogglePlayerSpectating(RPCParameters *rpcParams)
 
 	FLog("TogglePlayerSpectating: %d", dwToggle);
 
-	// ====== SPAWN FIX: Ignore spectate ON before player is active ======
-	if (dwToggle == 1 && pNetGame && pNetGame->GetPlayerPool() && pNetGame->GetPlayerPool()->GetLocalPlayer()) {
-		CLocalPlayer* pLocal = pNetGame->GetPlayerPool()->GetLocalPlayer();
-		if (!pLocal->m_bIsActive) {
-			FLog("[FIX] ScrTogglePlayerSpectating: Player not active yet, ignoring spectate ON");
-			return;
-		}
-	}
-	// ================================================================
-
 	pNetGame->GetPlayerPool()->GetLocalPlayer()->ToggleSpectating(dwToggle);
 
 	return;
@@ -133,14 +123,6 @@ void ScrSetSpawnInfo(RPCParameters *rpcParams)
 	bsData.Read((char*)&spawnInfo, sizeof(PLAYER_SPAWN_INFO));
 
 	pNetGame->GetPlayerPool()->GetLocalPlayer()->SetSpawnInfo(&spawnInfo);
-
-	// ====== SPAWN FIX: Force spectate OFF when spawn info received ======
-	CLocalPlayer* pLocal = pNetGame->GetPlayerPool()->GetLocalPlayer();
-	if (pLocal && pLocal->m_bSpectateProcessed) {
-		FLog("[FIX] ScrSetSpawnInfo: Forcing spectate OFF");
-		pLocal->ToggleSpectating(0);
-	}
-	// ====================================================================
 
 	return;
 }
@@ -1526,31 +1508,7 @@ void ScrTogglePlayerControllable(RPCParameters* rpcParams)
 	RakNet::BitStream bsData(Data, (iBitLength / 8) + 1, false);
 	bsData.Read(byteControllable);
 
-	// ====== CRASH FIX: Comprehensive null and state checks ======
-	if (!pGame) {
-		FLog("[FIX] ScrTogglePlayerControllable: pGame is NULL!");
-		return;
-	}
-
-	CPlayerPed* pPlayerPed = pGame->FindPlayerPed();
-	if (!pPlayerPed) {
-		FLog("[FIX] ScrTogglePlayerControllable: FindPlayerPed() returned NULL!");
-		return;
-	}
-
-	// CRITICAL: Only process TogglePlayerControllable after player has spawned.
-	// The server sends this RPC early (before Spawn), causing ScriptCommand
-	// to crash inside libGTASA.so because CTheScripts isn't fully ready.
-	if (pNetGame && pNetGame->GetPlayerPool() && pNetGame->GetPlayerPool()->GetLocalPlayer()) {
-		CLocalPlayer* pLocal = pNetGame->GetPlayerPool()->GetLocalPlayer();
-		if (!pLocal->m_bIsActive) {
-			FLog("[FIX] ScrTogglePlayerControllable: Player not active yet (before Spawn), ignoring. state=%d", byteControllable);
-			return;
-		}
-	}
-	// ==========================================================
-
-	pPlayerPed->TogglePlayerControllable(byteControllable);
+	pGame->FindPlayerPed()->TogglePlayerControllable(byteControllable);
 }
 
 void ScrPlayerPlaySound(RPCParameters* rpcParams)
