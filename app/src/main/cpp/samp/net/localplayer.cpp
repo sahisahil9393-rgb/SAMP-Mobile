@@ -669,8 +669,6 @@ void CLocalPlayer::HandleClassSelection()
 		m_pPlayerPed->SetInitialState();
 		m_pPlayerPed->SetHealth(100.0f);
 		m_pPlayerPed->TogglePlayerControllable(false);
-	} else {
-		FLog("HandleClassSelection: m_pPlayerPed is null!");
 	}
 }
 // 0.3.7
