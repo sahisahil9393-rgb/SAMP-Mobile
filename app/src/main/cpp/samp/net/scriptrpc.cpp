@@ -108,6 +108,16 @@ void ScrTogglePlayerSpectating(RPCParameters *rpcParams)
 
 	FLog("TogglePlayerSpectating: %d", dwToggle);
 
+	// ====== SPAWN FIX: Ignore spectate ON before player is active ======
+	if (dwToggle == 1 && pNetGame && pNetGame->GetPlayerPool() && pNetGame->GetPlayerPool()->GetLocalPlayer()) {
+		CLocalPlayer* pLocal = pNetGame->GetPlayerPool()->GetLocalPlayer();
+		if (!pLocal->m_bIsActive) {
+			FLog("[FIX] ScrTogglePlayerSpectating: Player not active yet, ignoring spectate ON");
+			return;
+		}
+	}
+	// ================================================================
+
 	pNetGame->GetPlayerPool()->GetLocalPlayer()->ToggleSpectating(dwToggle);
 
 	return;
@@ -123,6 +133,14 @@ void ScrSetSpawnInfo(RPCParameters *rpcParams)
 	bsData.Read((char*)&spawnInfo, sizeof(PLAYER_SPAWN_INFO));
 
 	pNetGame->GetPlayerPool()->GetLocalPlayer()->SetSpawnInfo(&spawnInfo);
+
+	// ====== SPAWN FIX: Force spectate OFF when spawn info received ======
+	CLocalPlayer* pLocal = pNetGame->GetPlayerPool()->GetLocalPlayer();
+	if (pLocal && pLocal->m_bSpectateProcessed) {
+		FLog("[FIX] ScrSetSpawnInfo: Forcing spectate OFF");
+		pLocal->ToggleSpectating(0);
+	}
+	// ====================================================================
 
 	return;
 }
