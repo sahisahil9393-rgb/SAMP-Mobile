@@ -521,6 +521,14 @@ bool IsPedModel(unsigned int iModelID)
 // 0.3.7
 void CPlayerPed::SetModelIndex(uint uiModel)
 {
+    FLog(
+        "SET_MODEL requested=%u gtaPed=%p localPed=%p valid=%d",
+        uiModel,
+        GamePool_Ped_GetAt(m_dwGTAId),
+        m_pPed,
+        IsPedModel(uiModel)
+    );
+
     if(!GamePool_Ped_GetAt(m_dwGTAId)) return;
     if(!IsPedModel(uiModel))
         uiModel = 0;
