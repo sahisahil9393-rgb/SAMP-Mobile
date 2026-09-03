@@ -22,6 +22,8 @@
 #include "samp_widgets/chat.h"
 #include "samp_widgets/spawn.h"
 #include "samp_widgets/buttonpanel.h"
+#include "samp_widgets/inventorybutton.h"
+#include "samp_widgets/inventorypanel.h"
 #include "samp_widgets/playertablist.h"
 #include "samp_widgets/voicebutton.h"
 
@@ -52,6 +54,8 @@ public:
 	Keyboard* keyboard() const { return m_keyboard; }
 	Dialog* dialog() const { return m_dialog; }
 	ButtonPanel* buttonpanel() const { return m_buttonPanel; }
+	InventoryButton* inventorybutton() const { return m_inventoryButton; }
+	InventoryPanel* inventorypanel() const { return m_inventoryPanel; }
 	PlayerTabList* playertablist() const { return m_playerTabList; }
 	VoiceButton* voicebutton() const { return m_voiceButton; }
 
@@ -94,6 +98,8 @@ private:
 	Spawn* m_spawn;
 	Dialog* m_dialog;
 	ButtonPanel* m_buttonPanel;
+	InventoryButton* m_inventoryButton;
+	InventoryPanel* m_inventoryPanel;
 	PlayerTabList* m_playerTabList;
 	VoiceButton* m_voiceButton;
 	Label* label;
