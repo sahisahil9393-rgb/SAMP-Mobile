@@ -62,6 +62,14 @@ ImVec2 UISettings::m_buttonPanelSize = ImVec2(380.0f/*250.0f*//*180.0f*//*250.0f
 ImVec2 UISettings::m_buttonVoicePos = ImVec2(500.0f, 180.0f/*170.0f*/);
 ImVec2 UISettings::m_buttonVoiceSize = ImVec2(55.0f, 80.0f);
 
+/* inventory button */
+ImVec2 UISettings::m_inventoryButtonPos = ImVec2(570.0f, 180.0f);
+ImVec2 UISettings::m_inventoryButtonSize = ImVec2(58.0f, 58.0f);
+
+/* inventory panel */
+ImVec2 UISettings::m_inventoryPanelPos = ImVec2(90.0f, 50.0f);
+ImVec2 UISettings::m_inventoryPanelSize = ImVec2(460.0f, 380.0f);
+
 /* ////////////////// colors ////////////////// */
 
 /* button */
@@ -125,4 +133,12 @@ void UISettings::Initialize(const ImVec2& display_size)
 	/* button voice */
 	m_buttonVoicePos = m_buttonVoicePos * m_scaleFactor;
 	m_buttonVoiceSize = m_buttonVoiceSize * m_scaleFactor;
+
+	/* inventory button */
+	m_inventoryButtonPos = m_inventoryButtonPos * m_scaleFactor;
+	m_inventoryButtonSize = m_inventoryButtonSize * m_scaleFactor;
+
+	/* inventory panel */
+	m_inventoryPanelPos = m_inventoryPanelPos * m_scaleFactor;
+	m_inventoryPanelSize = m_inventoryPanelSize * m_scaleFactor;
 }
