@@ -50,18 +50,6 @@ bool UI::initialize()
 	m_buttonPanel->setPosition(UISettings::buttonPanelPos());
 	m_buttonPanel->setVisible(false);
 
-	m_inventoryButton = new InventoryButton();
-	this->addChild(m_inventoryButton);
-	m_inventoryButton->setFixedSize(UISettings::inventoryButtonSize());
-	m_inventoryButton->setPosition(UISettings::inventoryButtonPos());
-	m_inventoryButton->setVisible(false);
-
-	m_inventoryPanel = new InventoryPanel();
-	this->addChild(m_inventoryPanel);
-	m_inventoryPanel->setFixedSize(UISettings::inventoryPanelSize());
-	m_inventoryPanel->setPosition(UISettings::inventoryPanelPos());
-	m_inventoryPanel->setVisible(false);
-
 	m_voiceButton = new VoiceButton();
 	this->addChild(m_voiceButton);
 	m_voiceButton->setFixedSize(UISettings::buttonVoiceSize());
@@ -174,12 +162,6 @@ void UI::touchEvent(const ImVec2& pos, TouchType type)
 	if (m_dialog->visible() && m_dialog->contains(pos))
 	{
 		m_dialog->touchEvent(pos, type);
-		return;
-	}
-
-	if (m_inventoryPanel->visible())
-	{
-		m_inventoryPanel->touchEvent(pos, type);
 		return;
 	}
 

@@ -53,14 +53,6 @@ public:
 	static ImVec2 buttonVoicePos() { return m_buttonVoicePos; }
 	static ImVec2 buttonVoiceSize() { return m_buttonVoiceSize; }
 
-	/* inventory button */
-	static ImVec2 inventoryButtonPos() { return m_inventoryButtonPos; }
-	static ImVec2 inventoryButtonSize() { return m_inventoryButtonSize; }
-
-	/* inventory panel */
-	static ImVec2 inventoryPanelPos() { return m_inventoryPanelPos; }
-	static ImVec2 inventoryPanelSize() { return m_inventoryPanelSize; }
-
 	/* ////////////////// colors ////////////////// */
 
 	/* button */
@@ -127,14 +119,6 @@ private:
 	/* voice button */
 	static ImVec2 m_buttonVoicePos;
 	static ImVec2 m_buttonVoiceSize;
-
-	/* inventory button */
-	static ImVec2 m_inventoryButtonPos;
-	static ImVec2 m_inventoryButtonSize;
-
-	/* inventory panel */
-	static ImVec2 m_inventoryPanelPos;
-	static ImVec2 m_inventoryPanelSize;
 
 	/* ////////////////// colors ////////////////// */
 
