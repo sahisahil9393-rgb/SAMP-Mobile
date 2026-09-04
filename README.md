@@ -14,7 +14,7 @@ Modern **SA-MP 2.10** client for **Grand Theft Auto: San Andreas (Android)**.
 ```text
 /storage/emulated/0/GTA/
 ```
-
+لا
 ## Requirements
 
 * Android device
